@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  auto-care-ai：AI 能力模块。
+
+  依赖方向：ai 依赖 common；server 依赖 ai；ai 不依赖 server。
+  为什么是这个方向：业务层（server）需要「解析预约草稿」「核对报价证据」这些能力，
+  所以 server 必须能编译到 ai 的接口；反过来 ai 的适配器要用到订单、车辆、历史这些数据，
+  它**不能**反向 import server 的 Service——那会立刻形成 server ⇄ ai 循环依赖，Maven 都编不过。
+  正确做法是 server 把自己的数据以「只读端口」的形式注入给 ai（设计 §5.1）。
+
+  G3：显式创建模型适配器，不引入厂商自动配置；D5使用持久化本地向量快照。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.autocare</groupId>
+        <artifactId>auto-care</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>auto-care-ai</artifactId>
+    <name>auto-care-ai</name>
+    <description>AI 能力接口与 Spring AI 适配实现；对业务只暴露接口</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.autocare</groupId>
+            <artifactId>auto-care-common</artifactId>
+        </dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-client-chat</artifactId></dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-deepseek</artifactId></dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-openai</artifactId></dependency>
+        <dependency><groupId>org.apache.pdfbox</groupId><artifactId>pdfbox</artifactId></dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-vector-store</artifactId></dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-redis-store</artifactId></dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-pdf-document-reader</artifactId></dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-markdown-document-reader</artifactId></dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-model-chat-memory-repository-jdbc</artifactId></dependency>
+        <dependency><groupId>org.springframework.ai</groupId><artifactId>spring-ai-rag</artifactId></dependency>
+    </dependencies>
+</project>

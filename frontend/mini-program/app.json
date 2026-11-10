@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/preview/index", "pages/orders/index", "pages/booking/index",
+    "pages/owner/index", "pages/technician/index", "pages/vehicles/index", "pages/chat/index", "pages/assistant/index", "pages/support/index", "pages/quote/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "爱修",
+    "navigationBarBackgroundColor": "#f7f6f6",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f7f6f6"
+  },
+  "sitemapLocation": "sitemap.json"
+}
+
+
+
+

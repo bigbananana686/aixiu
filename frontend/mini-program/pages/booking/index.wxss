@@ -1,0 +1,16 @@
+.steps { display: flex; margin-top: 24rpx; border-bottom: 1rpx solid #e8dedf; gap: 20rpx; }
+.steps text { padding: 8rpx 0 12rpx; color: #685b5e; font-size: 24rpx; }
+.steps .step-current { border-bottom: 5rpx solid #b9232b; color: #b9232b; font-weight: 700; }
+
+.booking-icon { flex: none; width: 58rpx; height: 58rpx; padding: 5rpx; border-radius: 12rpx; background: #fff1dd; }
+.booking-icon.air { background: #eaf1fd; }
+.booking-service-name { flex: 1; }
+.booking-service-name text { display: block; }
+.booking-price { margin-top: 6rpx; color: #685b5e; font-size: 23rpx; font-weight: 400; }
+.service-check { display: flex; flex: none; align-items: center; justify-content: center; width: 36rpx; height: 36rpx; border: 2rpx solid #d7caca; border-radius: 8rpx; }
+.service-check.checked { background: #b9232b; border-color: #b9232b; color: #fff; }
+.booking-quantity { display: flex; align-items: center; justify-content: flex-end; gap: 20rpx; padding: 12rpx 8rpx 4rpx; }
+.booking-quantity button { width: 54rpx; height: 48rpx; margin: 0; padding: 0; color: #b9232b; background: #fff0f0; font-size: 30rpx; line-height: 48rpx; }
+.booking-quantity button::after { border: 0; }
+.booking-quantity button[disabled] { color: #a49598; background: #f7f6f6; }
+.booking-summary { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12rpx; margin-top: 24rpx; padding: 20rpx 0; border-top: 1rpx solid #e8dedf; border-bottom: 1rpx solid #e8dedf; color: #b9232b; }

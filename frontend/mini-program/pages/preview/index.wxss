@@ -1,0 +1,7 @@
+.login-brand { display: flex; align-items: center; gap: 12rpx; margin: 8rpx 0 26rpx; font-weight: 700; }
+.brand-icon { padding: 4rpx 10rpx; border-radius: 5rpx; color: #fff; background: #b9232b; }
+.login-hero { padding: 36rpx 28rpx 38rpx; border-radius: 12rpx; background: #6f1d26; color: #fff; }
+.login-hero .hero-sub { font-size: 26rpx; }
+.login-form { padding: 28rpx; }
+.login-form .error { display: block; }
+.demo-guide { display: flex; flex-direction: column; gap: 7rpx; margin: 28rpx 12rpx; color: #685b5e; font-size: 24rpx; }

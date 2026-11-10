@@ -1,0 +1,12 @@
+# 本地启动入口。
+#
+# 本文件刻意只做一件事：把 application-example.yml 加载进来。
+# 为什么不直接把配置写在这里——提示词要求的交付物是「配置样例 application-example.yml」，
+# 而 Spring Boot 只会自动加载 application.yml / application-{profile}.yml，
+# 叫 example 的文件不会被读。如果两边各写一份，就有了两个「事实来源」，早晚改岔。
+# 所以：**配置只写 application-example.yml 一份**，这里做一次 import，服务和样例同时成立。
+#
+# Spring Boot 的规则是「导入文件里的属性可以被导入方覆盖」，本文件除 import 外不放别的属性。
+spring:
+  config:
+    import: classpath:application-example.yml

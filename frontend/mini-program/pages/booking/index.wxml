@@ -1,0 +1,69 @@
+<view class="screen">
+  <view wx:if="{{demoMode}}" class="demo">车主端 · 示例预约</view>
+  <text class="title">预约上门服务</text>
+  <view class="steps">
+    <text class="{{step === 0 ? 'step-current' : ''}}">1 选车辆</text>
+    <text class="{{step === 1 ? 'step-current' : ''}}">2 选服务与时段</text>
+    <text class="{{step === 2 ? 'step-current' : ''}}">3 确认</text>
+  </view>
+  <view wx:if="{{step === 0}}" class="section">
+    <text class="section-title">选一辆车</text>
+    <button wx:for="{{vehicles}}" wx:key="id" class="choice {{vehicleId === item.id ? 'chosen' : ''}}" data-id="{{item.id}}" bindtap="chooseVehicle">
+      <text>{{item.car}}　{{item.plate}}</text><text wx:if="{{vehicleId === item.id}}">已选</text>
+    </button>
+    <button class="secondary" bindtap="openGarage">添加爱车 ›</button>
+  </view>
+  <view wx:elif="{{step === 1}}" class="section">
+    <view wx:if="{{!demoMode}}" class="booking-summary">
+      <textarea class="field" value="{{draftText}}" maxlength="2000" placeholder="可选：描述养护需求，让 AI 帮你整理草稿" bindinput="editDraft"/>
+      <button class="secondary" disabled="{{busy}}" bindtap="parseDraft">整理预约草稿</button>
+      <view wx:if="{{aiDraft}}" class="footnote">
+        草稿已生成，请核对后手动选择服务和时间。{{aiDraft.preferredTimeText}}
+        <view wx:for="{{aiDraft.symptoms}}" wx:key="*this">{{item}}</view>
+      </view>
+    </view>
+    <text class="section-title">服务项目</text>
+    <text class="footnote">可多选组合预约，所选项目将合并为一笔订单。</text>
+    <view wx:for="{{services}}" wx:key="id" class="booking-service">
+      <button class="choice {{item.quantity ? 'chosen' : ''}}" data-id="{{item.id}}" bindtap="chooseService" aria-pressed="{{item.quantity > 0}}">
+        <image class="booking-icon {{item.id}}" src="/assets/{{item.icon || item.id}}.svg" mode="aspectFit"/>
+        <view class="booking-service-name"><text>{{item.name}}</text><text class="booking-price">参考 ¥{{item.price}} · {{item.duration}}</text></view>
+        <text class="service-check {{item.quantity ? 'checked' : ''}}">{{item.quantity ? '✓' : ''}}</text>
+      </button>
+      <view wx:if="{{item.quantity}}" class="booking-quantity">
+        <text>数量</text>
+        <button disabled="{{item.quantity === 1}}" data-id="{{item.id}}" data-delta="-1" bindtap="changeQuantity">−</button>
+        <text>{{item.quantity}}</text>
+        <button disabled="{{item.quantity === 99}}" data-id="{{item.id}}" data-delta="1" bindtap="changeQuantity">＋</button>
+      </view>
+    </view>
+    <view class="booking-summary"><text>已选 {{selectedServices.length}} 项 · {{totalMinutes}} 分钟</text><text class="strong">参考 ¥{{estimatedAmount}}</text></view>
+    <text class="field-label">{{demoMode ? '上门时段 · 陈师傅' : '上门日期与时段'}}</text>
+    <block wx:if="{{!demoMode}}">
+      <picker mode="date" value="{{date}}" start="{{earliest}}" end="{{latest}}" bindchange="chooseDate"><view class="field">{{date}} ›</view></picker>
+      <button class="secondary" bindtap="loadSlots" disabled="{{loadingSlots}}">{{loadingSlots ? '正在查询' : '查询可选时段'}}</button>
+      <text wx:if="{{searchedSlots && !windows.length}}" class="footnote">当天没有适合的时段，请换一天或调整服务项目。</text>
+    </block>
+    <button wx:for="{{windows}}" wx:key="id" class="choice {{windowId === item.id ? 'chosen' : ''}}" data-id="{{item.id}}" bindtap="chooseWindow">
+      <text>{{item.time}} {{item.tech}}</text><text wx:if="{{windowId === item.id}}">已选</text>
+    </button>
+    <text class="field-label">停车位置</text>
+    <input class="field" value="{{address}}" bindinput="editAddress" maxlength="{{demoMode ? 60 : 500}}" placeholder="填写小区、楼栋和车位"/>
+  </view>
+  <view wx:else class="section">
+    <text class="section-title">核对预约信息</text>
+    <view class="row"><text class="label">车辆</text><text class="row-value">{{vehicle.car}} {{vehicle.plate}}</text></view>
+    <view class="row" wx:for="{{selectedServices}}" wx:key="id"><text>{{item.name}} × {{item.quantity}}</text><text>¥{{item.price}} / 项</text></view>
+    <view class="row"><text class="label">合计参考金额</text><text class="strong">¥{{estimatedAmount}}</text></view>
+    <view class="row"><text class="label">预计服务工时</text><text>{{totalMinutes}} 分钟</text></view>
+    <view class="row"><text class="label">预约窗口</text><text class="row-value">{{window.time}} {{window.tech}}</text></view>
+    <view class="row"><text class="label">停车位置</text><text class="row-value">{{address}}</text></view>
+    <text class="footnote">技师到达后会发送报价，确认后开始保养。</text>
+  </view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+  <button wx:if="{{step !== 2}}" class="action" disabled="{{loading}}" bindtap="next">下一步</button>
+  <button wx:else class="action" disabled="{{submitting}}" bindtap="book">{{submitting ? '正在提交' : '确认组合预约'}}</button>
+  <button wx:if="{{step > 0}}" class="secondary" bindtap="back">返回上一步</button>
+</view>
+
+

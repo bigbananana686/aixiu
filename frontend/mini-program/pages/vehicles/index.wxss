@@ -1,0 +1,20 @@
+.garage .title { margin: 8rpx 0 20rpx; }
+.garage-car { display: flex; align-items: center; gap: 18rpx; padding: 14rpx 0; border-bottom: 1rpx solid #eee; }
+.garage-car image { width: 155rpx; height: 75rpx; }
+.garage-car .footnote { margin-top: 2rpx; }
+.garage-heading { display: flex; align-items: center; justify-content: space-between; gap: 8rpx; }
+.garage-heading .section-title { margin: 0; }
+.back-link { display: inline-block; margin: 0; padding: 0 6rpx; background: transparent; color: #ad2029; font-size: 25rpx; line-height: 64rpx; }
+.back-link::after, .brand-choice::after, .model-group::after, .model-choice::after { border: 0; }
+.brand-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); row-gap: 22rpx; margin-top: 24rpx; }
+.brand-choice, .model-choice { min-width: 0; width: 100%; padding: 4rpx 0; background: #fff; color: #25252a; font-size: 23rpx; line-height: 1.4; }
+.brand-mark { display: flex; align-items: center; justify-content: center; width: 80rpx; height: 62rpx; margin: 0 auto 8rpx; border-radius: 10rpx; background: #f2f2f4; color: #353840; font-size: 13rpx; font-weight: 700; }
+.vehicle-steps { display: flex; justify-content: center; gap: 72rpx; padding: 14rpx; color: #ad2029; background: #fff; }
+.model-picker { display: flex; margin-top: 18rpx; border-radius: 12rpx; overflow: hidden; background: #fff; }
+.model-groups { flex: none; width: 140rpx; background: #efedef; }
+.model-group { display: block; width: 100%; padding: 0 8rpx; border-radius: 0; background: transparent; font-size: 25rpx; color: #46444a; }
+.model-group.active-group { background: #fff; border-left: 5rpx solid #b9232b; color: #ad2029; font-weight: 700; }
+.model-panel { flex: 1; min-width: 0; padding: 18rpx 12rpx; }
+.model-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.model-choice image { display: block; width: 100%; height: 68rpx; }
+

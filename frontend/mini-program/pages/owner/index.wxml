@@ -1,0 +1,86 @@
+<view wx:if="{{order}}" class="screen">
+  <view wx:if="{{demoMode}}" class="demo">车主端 · 示例数据</view>
+  <view class="mobile-hero">
+    <text class="ticket-kicker">{{order.orderNo || order.id}}</text>
+    <text class="title">{{order.car}}</text>
+    <text class="hero-sub">{{order.plate}} · {{order.service}}</text>
+    <text class="hero-status">{{order.statusLabel}}</text>
+  </view>
+  <view wx:if="{{order.quote && (order.status === 'quoted' || order.status === 'extraQuoted')}}" class="pending">
+    <text>{{order.status === 'extraQuoted' ? '待确认增项 · 含已批准的全部服务' : '待确认初始报价'}}</text>
+    <text class="amount">¥{{order.quote.total}}</text>
+    <text wx:if="{{order.approvedQuote}}">原价 ¥{{order.approvedQuote.total}} · 本次增加 ¥{{addedAmount}}</text>
+    <text class="footnote">请于 {{order.quote.deadline}} 前确认。替换报价沿用原截止时间，拒绝或到期后恢复原服务范围。</text>
+  </view>
+  <view wx:if="{{error}}" class="error">{{error}}</view>
+  <button wx:if="{{order.quote}}" class="action" bindtap="toggleQuote">{{showQuote ? '收起报价' : '查看报价'}}</button>
+  <view class="section quote-section" wx:if="{{showQuote && order.quote}}">
+    <text class="section-title">报价明细</text>
+    <view class="row" wx:for="{{order.quote.items}}" wx:key="lineKey">
+      <text>{{item.name}} × {{item.quantity}}</text><text>¥{{item.amount}}</text>
+    </view>
+    <view class="row"><text>合计</text><text class="strong">¥{{order.quote.total}}</text></view>
+    <text class="footnote">预计工时 {{order.quote.totalMinutes}} 分钟 · {{order.quote.reason}}</text>
+    <block wx:if="{{order.quote.status === 'PENDING'}}">
+      <button class="action" disabled="{{busy}}" bindtap="act" data-action="confirm">确认报价</button>
+      <button class="secondary" disabled="{{busy}}" bindtap="act" data-action="reject">拒绝报价</button>
+      <view wx:if="{{rejecting}}">
+        <text class="field-label">拒绝原因</text>
+        <textarea class="field reject-reason" value="{{rejectReason}}" maxlength="500" bindinput="editRejectReason" placeholder="请说明需要调整的项目或原因"/>
+        <button class="secondary" disabled="{{busy}}" bindtap="reject">提交拒绝原因</button>
+      </view>
+    </block>
+  </view>
+  <button wx:if="{{order.status === 'completed'}}" class="action" disabled="{{busy}}" bindtap="act" data-action="close">确认验收</button>
+  <navigator wx:if="{{demoMode}}" class="secondary entry" url="/pages/chat/index?id={{order.id}}">联系技师</navigator>
+  <view class="section">
+    <text class="section-title">预约信息</text>
+    <view wx:for="{{order.bookingItems}}" wx:key="serviceId" class="row"><text class="label">预约项目</text><text class="row-value">{{item.name}} × {{item.quantity}}</text></view>
+    <view class="row"><text class="label">上门时间</text><text class="row-value">{{order.appointment}}</text></view>
+    <view class="row"><text class="label">上门技师</text><text class="row-value">{{order.tech}}</text></view>
+    <view class="row"><text class="label">停车位置</text><text class="row-value">{{order.address}}</text></view>
+    <view class="row"><text class="label">承诺结束</text><text class="row-value">{{order.committedEndLabel}}</text></view>
+    <view wx:if="{{order.effectiveEnd !== order.committedEnd}}" class="row"><text class="label">增项预计结束</text><text class="row-value">{{order.effectiveEndLabel}} · 待确认</text></view>
+    <button wx:if="{{order.status === 'reserved' || order.status === 'accepted'}}" class="secondary" bindtap="toggleTime">{{changingTime ? '收起可选时段' : '修改预约时段'}}</button>
+    <view wx:if="{{changingTime && (order.status === 'reserved' || order.status === 'accepted')}}">
+      <block wx:if="{{!demoMode}}">
+        <picker mode="date" value="{{date}}" start="{{earliest}}" end="{{latest}}" bindchange="chooseDate"><view class="field">{{date}} ›</view></picker>
+        <button class="secondary" disabled="{{busy}}" bindtap="loadSlots">查询其他上门时段</button>
+      </block>
+      <button wx:for="{{windows}}" wx:key="id" class="choice" disabled="{{busy || item.id === order.windowId}}" bindtap="changeTime" data-id="{{item.id}}">{{item.time}}</button>
+      <view wx:if="{{error}}" class="error">{{error}}</view>
+    </view>
+    <button wx:if="{{order.status === 'reserved' || order.status === 'accepted'}}" class="secondary" disabled="{{busy}}" bindtap="act" data-action="cancel">取消预约</button>
+  </view>
+  <view class="section">
+    <text class="section-title">服务进度</text>
+    <view class="event {{index === 0 ? 'event-current' : ''}}" wx:for="{{order.progress}}" wx:key="id">
+      <text class="event-time">{{item.time}}</text><text>{{item.title}}</text>
+    </view>
+  </view>
+  <view wx:if="{{order.quotes.length}}" class="section">
+    <text class="section-title">报价历史</text>
+    <view wx:for="{{order.quotes}}" wx:key="id" class="quote-history-row">
+      <view class="row"><text>第 {{item.version}} 版 · {{item.purposeLabel}}</text><text>{{item.statusLabel}}</text></view>
+      <text class="strong">¥{{item.total}} · {{item.totalMinutes}} 分钟</text>
+      <text class="footnote">{{item.reason}}</text>
+      <text wx:if="{{item.decisionReason}}" class="footnote">拒绝原因 · {{item.decisionReason}}</text>
+    </view>
+  </view>
+  <view wx:if="{{!demoMode && (order.quote || order.approvedQuote)}}" class="section">
+    <text class="section-title">报价分析</text>
+    <button class="secondary" disabled="{{busy}}" bindtap="requestAnalysis">请求分析</button>
+    <view wx:if="{{analysisJob}}"><text class="footnote">{{analysisStatus}}</text><text class="footnote">{{analysisText}}</text>
+      <button class="secondary" disabled="{{busy}}" bindtap="refreshAnalysis">刷新分析结果</button>
+    </view>
+  </view>
+  <view wx:if="{{order.exceptions.length}}" class="section">
+    <text class="section-title">服务异常</text>
+    <view wx:for="{{order.exceptions}}" wx:key="id" class="quote-history-row"><text class="strong">{{item.label}}</text><text class="footnote">{{item.detail}}</text></view>
+  </view>
+</view>
+<view wx:else class="screen">{{loading ? '正在读取订单…' : error || '该订单已不可查看，请返回订单列表。'}}
+  <button wx:if="{{error && !loading}}" class="secondary" bindtap="refresh">重试</button>
+</view>
+
+

@@ -1,0 +1,59 @@
+<view class="screen garage">
+  <view wx:if="{{step === 'garage'}}">
+    <text class="title">我的爱车</text>
+    <view class="section">
+      <view wx:for="{{vehicles}}" wx:key="id" class="garage-car">
+        <image src="/assets/car.svg" mode="aspectFit"/><view><text class="strong">{{item.car}}</text><text class="footnote">{{item.plate}}</text></view>
+        <button wx:if="{{!demoMode}}" class="back-link" data-id="{{item.id}}" bindtap="editVehicle">编辑</button>
+      </view>
+      <button class="action" bindtap="start">添加爱车</button>
+    </view>
+  </view>
+  <view wx:elif="{{step === 'brand'}}">
+    <button class="back-link" data-step="garage" bindtap="back">‹ 我的爱车</button>
+    <view class="section">
+      <view class="garage-heading"><text class="section-title">选择品牌车型</text><button wx:if="{{!showAll}}" class="back-link" bindtap="allBrands">全部品牌 ›</button></view>
+      <input wx:if="{{showAll}}" class="field" value="{{query}}" placeholder="搜索品牌" bindinput="search"/>
+      <view class="brand-grid">
+        <button wx:for="{{brands}}" wx:key="name" class="brand-choice" data-name="{{item.name}}" bindtap="chooseBrand">
+          <text class="brand-mark">{{item.mark}}</text><text>{{item.name}}</text>
+        </button>
+      </view>
+      <text wx:if="{{!brands.length}}" class="footnote">没有匹配的品牌。</text>
+    </view>
+  </view>
+  <view wx:elif="{{step === 'model'}}">
+    <button class="back-link" data-step="brand" bindtap="back">‹ 更换品牌</button>
+    <text class="title">{{brand.name}}</text>
+    <view class="vehicle-steps"><text>✓ 品牌</text><text class="strong">② 车系</text></view>
+    <view class="model-picker">
+      <view class="model-groups">
+        <button wx:for="{{brand.groups}}" wx:key="name" class="model-group {{groupIndex === index ? 'active-group' : ''}}" data-index="{{index}}" bindtap="chooseGroup">{{item.name}}</button>
+      </view>
+      <view class="model-panel">
+        <text class="section-title">{{group.name}}</text>
+        <view class="model-grid">
+          <button wx:for="{{group.models}}" wx:key="*this" class="model-choice" data-name="{{item}}" bindtap="chooseModel"><image src="/assets/car.svg" mode="aspectFit"/><text>{{item}}</text></button>
+        </view>
+      </view>
+    </view>
+  </view>
+  <view wx:else>
+    <button class="back-link" data-step="{{editingId ? 'garage' : 'model'}}" bindtap="back">{{editingId ? '‹ 我的爱车' : '‹ 更换车系'}}</button>
+    <view class="section">
+      <text class="section-title">{{editingId ? '编辑车辆' : brand.name + model}}</text>
+      <block wx:if="{{editingId}}">
+        <text class="field-label">车型代码</text>
+        <input class="field" value="{{modelCode}}" maxlength="64" bindinput="editModelCode"/>
+      </block>
+      <text class="field-label">车牌</text>
+      <input class="field" value="{{plate}}" placeholder="{{demoMode ? '填写示例车牌' : editingId ? '留空保留原车牌' : '填写车牌（选填）'}}" maxlength="16" bindinput="editPlate"/>
+      <block wx:if="{{!demoMode}}">
+        <text class="field-label">里程（公里）</text>
+        <input class="field" type="number" maxlength="7" value="{{mileage}}" bindinput="editMileage"/>
+      </block>
+      <text wx:if="{{error}}" class="error">{{error}}</text>
+      <button class="action" disabled="{{busy}}" bindtap="save">保存车辆</button>
+    </view>
+  </view>
+</view>

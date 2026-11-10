@@ -1,0 +1,32 @@
+<view class="screen">
+  <text class="title">{{replacing ? '替换' : '发布'}}{{purpose}}</text>
+  <view wx:if="{{order}}" class="section">
+    <text class="section-title">{{order.car}} · {{order.plate}}</text>
+    <text class="footnote" wx:if="{{replacing}}">替换后旧版失效，确认截止仍为 {{order.quote.deadline}}。</text>
+    <text class="footnote" wx:else>车主确认前，本次报价不会变成已批准服务。</text>
+  </view>
+  <view wx:if="{{inherited.length}}" class="section">
+    <text class="section-title">已批准范围</text>
+    <text class="footnote">保留原项目与数量，本轮只增加新条目。</text>
+    <view wx:for="{{inherited}}" wx:key="lineKey" class="row"><text>{{item.name}} × {{item.quantity}}</text><text>¥{{item.amount}}</text></view>
+  </view>
+  <view wx:if="{{order}}" class="section">
+    <text class="section-title">{{purpose === '增项报价' ? '选择新增服务' : '选择服务项目'}}</text>
+    <view wx:for="{{choices}}" wx:key="id" class="quote-choice">
+      <view class="quote-choice-info"><text class="strong">{{item.name}}</text><text class="footnote">¥{{item.price}} / 项 · {{item.minutes}} 分钟</text></view>
+      <view class="quantity-controls">
+        <button disabled="{{!item.quantity}}" data-id="{{item.id}}" data-delta="-1" bindtap="changeQuantity" aria-label="减少{{item.name}}">−</button>
+        <text>{{item.quantity}}</text>
+        <button disabled="{{item.quantity === 99}}" data-id="{{item.id}}" data-delta="1" bindtap="changeQuantity" aria-label="增加{{item.name}}">＋</button>
+      </view>
+    </view>
+  </view>
+  <view wx:if="{{order}}" class="section">
+    <view class="row"><text>完整报价合计</text><text class="strong">¥{{total}}</text></view>
+    <view class="row"><text>完整服务工时</text><text>{{minutes}} 分钟</text></view>
+    <text class="field-label">报价说明</text>
+    <textarea class="quote-reason" value="{{reason}}" maxlength="500" bindinput="editReason" placeholder="说明服务范围或替换原因"/>
+  </view>
+  <text wx:if="{{error}}" class="error">{{error}}</text>
+  <button wx:if="{{order}}" class="action" disabled="{{busy}}" bindtap="publish">{{replacing ? '发布新版报价' : '发送报价'}}</button>
+</view>

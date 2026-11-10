@@ -1,0 +1,4 @@
+@import "../chat/index.wxss";
+
+.assistant-suggestions { margin: 22rpx 28rpx; padding: 20rpx; border: 1rpx solid #e8dedf; border-radius: 12rpx; background: #fff; }
+.assistant-suggestions .secondary { width: 100%; text-align: left; line-height: 66rpx; }

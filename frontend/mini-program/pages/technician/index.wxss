@@ -1,0 +1,4 @@
+.quote-total { font-weight: 700; font-variant-numeric: tabular-nums; }
+.next-task { margin-top: 22rpx; padding: 22rpx 24rpx; background: #f8eeee; border-left: 6rpx solid #b9232b; }
+.next-waiting { background: #fff0f0; color: #76292e; border-color: #8c3237; }
+.quote-deadline { display: block; margin-top: 8rpx; font-weight: 700; }

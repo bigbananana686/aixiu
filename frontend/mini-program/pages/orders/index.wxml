@@ -1,0 +1,147 @@
+<view wx:if="{{account}}" class="screen owner-shell">
+  <view wx:if="{{loading}}" class="footnote">正在读取爱修服务…</view>
+  <view wx:if="{{error}}" class="error">{{error}}<button class="secondary" bindtap="onShow">重试</button></view>
+  <view wx:if="{{tab === 'home'}}" class="home-search">
+    <view class="search-icon"></view>
+    <input class="home-search-input" value="{{query}}" bindinput="searchHome" confirm-type="search"
+      maxlength="60" placeholder="{{isTech ? '搜索工单号、车型或服务' : '搜索保养服务、车型或订单'}}"/>
+    <button wx:if="{{query}}" class="search-clear" bindtap="clearSearch">清除</button>
+  </view>
+  <navigator wx:if="{{tab === 'home' && !searching}}" class="assistant-fab" url="/pages/assistant/index" aria-label="打开 AI 小助手">
+    <text class="assistant-fab-icon">AI</text>
+    <text class="assistant-fab-label">小助手</text>
+  </navigator>
+  <block wx:if="{{tab === 'messages'}}">
+    <view class="chat-list-heading">
+      <text class="title">{{isTech ? '客户消息' : '聊天'}}</text>
+      <text class="sub">{{isTech ? '和车主确认到达时间、停车位置与服务项目' : '和技师确认上门安排、报价与保养进度'}}</text>
+    </view>
+    <view class="chat-list">
+      <text wx:if="{{!conversations.length}}" class="chat-list-empty">有订单后可以开始聊天。</text>
+      <navigator wx:for="{{conversations}}" wx:key="id" class="thread-link" url="{{item.url}}">
+        <text class="thread-avatar">{{item.avatar}}</text>
+        <view class="thread-body">
+          <text class="thread-name">{{item.name}}</text>
+          <text class="thread-preview">{{item.preview}}</text>
+          <text class="thread-meta">{{item.service}} · {{item.id}}</text>
+        </view>
+        <view class="thread-right">
+          <text class="thread-time">{{item.time}}</text>
+          <text wx:if="{{item.unread}}" class="thread-unread">{{item.unread > 99 ? '99+' : item.unread}}</text>
+        </view>
+      </navigator>
+    </view>
+  </block>
+  <block wx:elif="{{isTech}}">
+    <view wx:if="{{tab === 'home'}}">
+      <view class="mobile-hero">
+        <text class="ticket-kicker">爱修 · 技师端</text>
+        <text class="title">我的订单</text>
+        <text class="hero-sub">{{account.loginName}} · 查看待办与服务进度</text>
+      </view>
+      <view wx:if="{{!searching}}" class="section tech-counts">
+        <view><text class="tech-count">{{actionableCount}}</text><text class="label">待我处理</text></view>
+        <view><text class="tech-count">{{waitingCount}}</text><text class="label">待车主确认</text></view>
+      </view>
+      <view wx:if="{{!searching}}" class="section">
+        <view class="list-heading"><text class="section-title">当前任务</text></view>
+        <view wx:if="{{currentJob}}" class="tech-current">
+          <view class="order-title"><text>{{currentJob.car}}</text><text class="badge">{{currentJob.statusLabel}}</text></view>
+          <text class="label">{{currentJob.service}}</text>
+          <text class="footnote">{{currentJob.appointment}} · {{currentJob.address}}</text>
+          <view class="tech-next"><text class="strong">下一步</text><text>{{currentJob.guidance}}</text></view>
+          <navigator class="action entry" url="{{currentJob.url}}">查看工单</navigator>
+        </view>
+        <text wx:else class="label">目前没有待处理工单。</text>
+      </view>
+    </view>
+
+  </block>
+  <block wx:elif="{{tab === 'home'}}">
+    <navigator wx:if="{{!searching}}" class="car-banner" url="/pages/vehicles/index">
+      <view><text class="banner-label">我的爱车</text><text class="banner-title">{{vehicle ? vehicle.car : '添加爱车'}}</text><text class="footnote">{{vehicle ? vehicle.plate : '选择品牌和车系'}}</text></view>
+      <image src="/assets/car.svg" mode="aspectFit"/><text class="service-arrow">›</text>
+    </navigator>
+    <view class="section">
+      <view class="list-heading">
+        <text class="section-title">上门服务</text>
+        <button wx:if="{{!searching}}" class="account-exit" bindtap="toggleServices" aria-expanded="{{servicesExpanded}}">{{servicesExpanded ? '收起服务 ⌃' : '更多服务 ⌄'}}</button>
+      </view>
+      <text wx:if="{{searching && !matchedServices.length}}" class="label">没有找到匹配的上门服务。</text>
+      <view class="quick-grid">
+        <navigator wx:for="{{displayedServices}}" wx:key="id" url="/pages/booking/index?service={{item.id}}">
+          <image class="quick-icon tone-{{item.tone}}" src="/assets/{{item.icon || item.id}}.svg" mode="aspectFit"/><text>{{item.label}}</text>
+        </navigator>
+      </view>
+    </view>
+  </block>
+  <block wx:if="{{tab === 'mine'}}">
+    <view class="profile">
+      <text class="profile-avatar">爱</text>
+      <view><text class="section-title">{{account.loginName}}</text><text class="label">{{isTech ? '技师账号' : '车主账号'}}</text></view>
+    </view>
+    <view class="section my-order-card">
+      <view class="list-heading">
+        <text class="section-title">{{isTech ? '我的工单' : '我的订单'}}</text>
+        <button class="account-exit" data-filter="all" bindtap="selectOwnerOrders">{{isTech ? '全部工单' : '全部订单'}} ›</button>
+      </view>
+      <view class="owner-order-statuses">
+        <button wx:for="{{orderFilters}}" wx:key="id" class="owner-order-status {{ownerOrderFilter === item.id ? 'status-selected' : ''}}" data-filter="{{item.id}}" bindtap="selectOwnerOrders">
+          <image src="/assets/order-{{item.icon || item.id}}.svg" mode="aspectFit"/><text>{{item.label}}</text>
+        </button>
+      </view>
+      <text wx:if="{{!ownerOrderRows.length}}" class="label order-empty">{{ownerOrderEmpty}}</text>
+      <navigator wx:for="{{ownerOrderRows}}" wx:key="id" class="order-link" url="{{item.url}}">
+        <view class="order-title"><text>{{item.car}}</text><text class="badge">{{item.statusLabel}}</text></view>
+        <view class="label">{{item.service}}</view>
+        <view class="footnote">{{item.appointment}} · {{item.orderNo || item.id}}</view>
+      </navigator>
+    </view>
+      <view wx:if="{{isTech && demoMode}}" class="section">
+        <text class="section-title">累计服务</text>
+        <view class="tech-stats">
+          <view><text class="tech-count">{{stats.hours}} 小时 {{stats.minutes}} 分</text><text class="label">累计工时</text></view>
+          <view><text class="tech-count">{{stats.count}} 单</text><text class="label">已完工</text></view>
+          <view><text class="tech-count">¥{{stats.amount}}</text><text class="label">完工订单金额</text></view>
+        </view>
+        <text class="footnote">统计当前演示订单。订单金额按确认报价汇总，实际收入以结算为准。</text>
+      </view>
+    <view class="section">
+      <text class="section-title">客服与帮助</text>
+      <navigator class="profile-link" url="/pages/support/index"><text>联系客服</text><text class="service-arrow">›</text></navigator>
+      <navigator wx:if="{{!isTech}}" class="profile-link" url="/pages/support/index?type=feedback"><text>问题反馈</text><text class="service-arrow">›</text></navigator>
+      <navigator wx:if="{{!isTech}}" class="profile-link" url="/pages/support/index?type=complaint"><text>服务投诉</text><text class="service-arrow">›</text></navigator>
+      <navigator class="profile-link" url="/pages/assistant/index"><text>常见问题</text><text class="service-arrow">›</text></navigator>
+    </view>
+    <view wx:if="{{!isTech}}" class="section">
+      <text class="section-title">我的服务</text>
+      <navigator class="profile-link" url="/pages/vehicles/index"><text>我的爱车</text><text class="service-arrow">›</text></navigator>
+      <button class="profile-link" data-tab="home" bindtap="switchTab"><text>预约保养</text><text class="service-arrow">›</text></button>
+    </view>
+  </block>
+  <view wx:if="{{tab === 'home'}}" class="section">
+    <view class="list-heading"><text class="section-title">{{isTech ? '工单列表' : '服务进度'}}</text><text wx:if="{{demoMode}}" class="label">示例订单</text></view>
+    <text wx:if="{{tab === 'home' && searching && !matchedOrders.length}}" class="label">没有找到匹配的订单。</text>
+    <navigator wx:for="{{tab === 'home' && searching ? matchedOrders : orders}}" wx:key="id" class="order-link" url="{{item.url}}">
+      <view class="order-title"><text>{{item.car}}</text><text class="badge">{{item.statusLabel}}</text></view>
+      <view class="label">{{item.service}}</view>
+      <view class="footnote">{{item.appointment}} · {{item.id}}</view>
+    </navigator>
+  </view>
+  <button wx:if="{{tab === 'mine'}}" class="secondary" bindtap="logout">退出登录</button>
+  <view class="owner-nav">
+    <button wx:for="{{tabs}}" wx:key="id" class="{{tab === item.id ? 'selected-tab' : ''}}" data-tab="{{item.id}}" bindtap="switchTab">
+      <image src="/assets/{{item.id}}.svg" mode="aspectFit"/><text>{{item.label}}</text>
+      <text wx:if="{{item.id === 'messages' && unreadTotal}}" class="nav-unread">{{unreadTotal > 99 ? '99+' : unreadTotal}}</text>
+    </button>
+  </view>
+</view>
+
+
+
+
+
+
+
+
+

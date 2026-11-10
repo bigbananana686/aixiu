@@ -1,0 +1,13 @@
+.conversation { display: flex; flex-direction: column; height: 100vh; }
+.conversation-head { padding: 20rpx 28rpx; background: #fff; border-bottom: 1rpx solid #e8dedf; }
+.conversation-head .footnote { margin-top: 4rpx; }
+.conversation-scroll { flex: 1; min-height: 0; height: 0; }
+.empty-chat { display: block; margin: 24rpx; text-align: center; color: #685b5e; }
+.message-row { display: flex; flex-direction: column; align-items: flex-start; gap: 5rpx; margin: 22rpx 28rpx; }
+.message-who { color: #685b5e; font-size: 23rpx; }
+.message-bubble { max-width: 82%; padding: 15rpx 20rpx; border-radius: 10rpx; background: #fff; white-space: pre-wrap; word-break: break-all; }
+.message-mine { align-items: flex-end; }
+.message-mine .message-bubble { background: #f9dfe2; }
+.conversation-compose { display: flex; gap: 12rpx; align-items: center; padding: 14rpx 20rpx calc(14rpx + env(safe-area-inset-bottom)); background: #fff; border-top: 1rpx solid #e8dedf; }
+.conversation-compose .field { flex: 1; min-width: 0; }
+.conversation-compose .action { flex: none; margin: 0; padding: 0 25rpx; line-height: 78rpx; }

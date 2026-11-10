@@ -1,0 +1,27 @@
+<view wx:if="{{account}}" class="conversation">
+  <view class="conversation-head">
+    <text class="section-title">AI 小助手</text>
+    <text class="label">{{account.role === 'TECH' ? '技师工单指引' : '车主养护指引'}}</text>
+    <text wx:if="{{demoMode}}" class="footnote">演示版 · 常见问题指引</text>
+    <view wx:else>
+      <picker range="{{conversations}}" range-key="label" disabled="{{busy || !conversations.length}}" bindchange="pickConversation"><view class="field">历史会话（{{conversations.length}}） ›</view></picker>
+      <button class="secondary" disabled="{{busy}}" bindtap="newConversation">新会话</button>
+      <button wx:if="{{current}}" class="secondary" disabled="{{busy}}" bindtap="removeConversation">删除当前会话</button>
+    </view>
+    <text wx:if="{{error}}" class="error">{{error}}</text>
+  </view>
+  <scroll-view class="conversation-scroll" scroll-y scroll-into-view="{{lastMessage}}">
+    <view class="assistant-suggestions">
+      <text class="strong">常见问题</text>
+      <button wx:for="{{suggestions}}" wx:key="*this" class="secondary" disabled="{{busy}}" data-question="{{item}}" bindtap="choose">{{item}}</button>
+    </view>
+    <view wx:for="{{messages}}" wx:key="id" id="assistant-{{item.id}}" class="message-row {{item.mine ? 'message-mine' : ''}}">
+      <text class="message-who">{{item.mine ? '我' : '小助手'}}</text>
+      <text class="message-bubble">{{item.text}}</text>
+    </view>
+  </scroll-view>
+  <view class="conversation-compose">
+    <input class="field" value="{{draft}}" placeholder="输入问题" maxlength="300" bindinput="edit" confirm-type="send" bindconfirm="send"/>
+    <button class="action" bindtap="send" disabled="{{busy || !draft}}">{{busy ? '处理中' : '发送'}}</button>
+  </view>
+</view>

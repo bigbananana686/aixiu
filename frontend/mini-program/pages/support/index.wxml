@@ -1,0 +1,42 @@
+<view wx:if="{{allowed}}" class="screen">
+  <text class="title">{{title}}</text>
+  <view wx:if="{{type}}" class="section">
+    <text wx:if="{{!available}}" class="label">当前环境尚未配置反馈服务。</text>
+    <block wx:elif="{{saved}}">
+      <text class="section-title">提交成功</text>
+      <text class="label">这条记录已同步到爱修管理端预览。</text>
+      <button class="secondary entry" bindtap="startAgain">继续提交</button>
+    </block>
+    <block wx:else>
+      <text class="section-title">{{type === 'COMPLAINT' ? '反馈服务问题' : '告诉我们你遇到的问题'}}</text>
+      <text class="footnote">本地预览，请使用演示订单和内容。</text>
+      <text class="field-label">关联订单{{type === 'FEEDBACK' ? '（选填）' : ''}}</text>
+      <picker range="{{orders}}" range-key="label" value="{{orderIndex}}" disabled="{{busy}}" bindchange="chooseOrder">
+        <view class="support-picker">{{orders[orderIndex].label}}</view>
+      </picker>
+      <text class="field-label">问题说明</text>
+      <textarea class="support-detail" value="{{detail}}" bindinput="edit" maxlength="300"
+        disabled="{{busy}}" placeholder="填写遇到的问题和希望如何解决"/>
+      <text wx:if="{{error}}" class="error">{{error}}</text>
+      <button class="action" loading="{{busy}}" disabled="{{busy}}" bindtap="save">提交{{type === 'COMPLAINT' ? '投诉' : '反馈'}}</button>
+    </block>
+  </view>
+  <view wx:else class="section">
+    <text class="section-title">客服与售后</text>
+    <text class="label">预约、报价和服务争议可以通过以下入口处理。</text>
+    <button class="action" open-type="contact">打开微信客服</button>
+    <text class="footnote">微信客服需在小程序后台开通。</text>
+    <navigator wx:if="{{isOwner}}" class="secondary entry" url="/pages/support/index?type=feedback">问题反馈 ›</navigator>
+    <navigator wx:if="{{isOwner}}" class="secondary entry" url="/pages/support/index?type=complaint">服务投诉 ›</navigator>
+    <navigator class="secondary entry" url="/pages/assistant/index">查看常见问题 ›</navigator>
+  </view>
+  <view wx:if="{{type && (history.length || historyError)}}" class="section">
+    <text class="section-title">我的提交记录</text>
+    <text wx:if="{{historyError}}" class="error">{{historyError}}</text>
+    <button wx:if="{{historyError}}" class="secondary entry" bindtap="loadHistory">重新读取记录</button>
+    <view wx:for="{{history}}" wx:key="id" class="order-link">
+      <text class="strong">{{item.orderId || title}}</text>
+      <text class="footnote">{{item.detail}}</text>
+    </view>
+  </view>
+</view>

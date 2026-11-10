@@ -1,0 +1,22 @@
+<view class="screen sign-in">
+  <view class="login-brand"><text class="brand-icon">爱</text><text>爱修</text></view>
+  <view class="login-hero">
+    <text class="title">上门汽车保养</text>
+    <text class="hero-sub">预约上门、确认报价、跟进养护进度。</text>
+  </view>
+  <form class="section login-form" bindsubmit="login">
+    <text class="section-title">{{registering ? '注册车主账号' : '账号登录'}}</text>
+    <text class="field-label">账号</text>
+    <input class="field" name="loginName" value="{{loginName}}" placeholder="输入账号" maxlength="64"/>
+    <text class="field-label">密码</text>
+    <input class="field" name="password" value="{{password}}" password placeholder="{{registering ? '至少 12 位' : '输入密码'}}" maxlength="128"/>
+    <text wx:if="{{error}}" class="error">{{error}}</text>
+    <button class="action" form-type="submit" loading="{{busy}}" disabled="{{busy}}">{{registering ? '注册并登录' : '登录'}}</button>
+    <button wx:if="{{!demoMode}}" class="secondary" type="button" bindtap="toggleRegister" disabled="{{busy}}">{{registering ? '返回登录' : '注册车主账号'}}</button>
+  </form>
+  <view wx:if="{{demoMode}}" class="demo-guide">
+    <text class="strong">体验账号</text>
+    <text>车主 demo-owner · 技师 demo-tech</text>
+    <text>演示密码 demo1234</text>
+  </view>
+</view>

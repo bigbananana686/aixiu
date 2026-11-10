@@ -1,0 +1,19 @@
+<view wx:if="{{order && account}}" class="conversation">
+  <view class="conversation-head">
+    <text class="section-title">{{account.role === 'TECH' ? '客户沟通' : '联系技师'}}</text>
+    <text class="label">{{order.car}} · {{order.id}}</text>
+    <text class="footnote">演示会话 · 当前小程序会话内可见</text>
+  </view>
+  <scroll-view class="conversation-scroll" scroll-y scroll-into-view="{{lastMessage}}">
+    <text wx:if="{{!messages.length}}" class="empty-chat">可以先发一条消息，确认上门时间或停车位置。</text>
+    <view wx:for="{{messages}}" wx:key="id" id="message-{{item.id}}" class="message-row {{item.role === account.role ? 'message-mine' : ''}}">
+      <text class="message-who">{{item.role === 'TECH' ? '技师' : '车主'}}</text>
+      <text class="message-bubble">{{item.text}}</text>
+    </view>
+  </scroll-view>
+  <view class="conversation-compose">
+    <input class="field" value="{{draft}}" placeholder="输入消息" maxlength="300" bindinput="edit" confirm-type="send" bindconfirm="send"/>
+    <button class="action" bindtap="send" disabled="{{!draft}}">发送</button>
+  </view>
+</view>
+<view wx:elif="{{account}}" class="screen">该订单不可查看，请返回订单列表。</view>

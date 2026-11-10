@@ -1,0 +1,202 @@
+# =============================================================================
+# auto-care 配置样例（本仓库唯一一份配置事实来源）
+#
+# 用法：application.yml 通过 spring.config.import 加载本文件，所以直接改这里即可。
+# 规矩：**不放任何真实密钥/密码**。敏感项一律写成 ${ENV_VAR:默认值}，由环境变量注入。
+#
+# 怎么注入（Windows PowerShell 5.1，只在当前窗口生效，不写注册表）：
+#   $env:DB_PASSWORD  = '改成你自己的密码'
+#   $env:DB_USERNAME  = 'auto_care'
+#   $env:MODEL_API_KEY = '...'
+# 想持久化再加 [Environment]::SetEnvironmentVariable('DB_PASSWORD','...','User')——
+# 但注意本项目 G0-01 的教训：**机器级 PATH 不能用 setx 改（会在 1024 字符处截断）**，
+# 这里说的是用户级环境变量，与 PATH 无关。
+#
+# 环境变量名取自 项目对话/02-开工准备/03-环境与版本核对表.md「配置名约定」，
+# 完整清单以那份表为准，这里不复制一份新的。
+# =============================================================================
+
+server:
+  # 18080：避开本机既有占用——8080（多数示例/其他服务）、6380（java_fight 的 Redis）、
+  # 3307/3306（MySQL）、13306（本项目 auto-care-mysql84 容器）。
+  port: 18080
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 11MB
+      file-size-threshold: 0B
+  application:
+    name: auto-care
+
+  # ---- Web 层行为（G0-04 第 3 节加，逐条理由见下）----
+  mvc:
+    # 未匹配到任何 handler 时抛 NoHandlerFoundException，而不是直接走 Boot 的 /error 分发。
+    # 不开这条，访问不存在的路径会拿到 Boot 默认 JSON，绕开我们的错误信封。
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      # 与上一条配套：不关掉静态资源映射，Spring 会为 /** 注册一个资源处理器，
+      # 于是"路径不存在"永远匹配得到，NoHandlerFoundException 永远不抛。纯 API 服务不需要静态资源。
+      add-mappings: false
+  jackson:
+    deserialization:
+      # 未知请求字段一律拒绝（400 INVALID_ARGUMENT + 字段级 UNKNOWN_FIELD）。
+      # 这是契约里「拒绝自选管理角色」的落点：注册请求 schema 里没有 role，
+      # 携带 role 必须报未知字段，而不是被静默忽略、更不能是 403。
+      fail-on-unknown-properties: true
+
+  # ---- 数据库：G0-03 起真正启用 ----
+  # G0-02 时 server 模块没把数据源放上 classpath，这段是「写了但不生效」；G0-03 起生效。
+  #
+  # 两条硬约束（G0-01 实测）：
+  #   1. 端口必须是 13306：那是本项目自己的容器 auto-care-mysql84（MySQL 8.4.11）。
+  #      3306 是本机另一套 MySQL 8.0.34，版本不对，不要连。
+  #   2. 容器 lower_case_table_names=0（Linux，大小写敏感）→ 库名/表名一律小写。
+  #
+  # URL 参数说明（G0-03 改了 G0-02 的两个写法，理由在下面）：
+  #   - connectionTimeZone=UTC + forceConnectionTimeZoneToSession=true
+  #     Connector/J 8.0.23 起 serverTimezone 已被 connectionTimeZone 取代。只写
+  #     connectionTimeZone=UTC 还不够——它只声明「驱动认为服务端是 UTC」，
+  #     并不会改会话时区；forceConnectionTimeZoneToSession=true 才会把会话 time_zone
+  #     也设成 UTC，DATETIME(3) 的 UTC 往返才不会被 JVM 默认时区偷偷挪。
+  #     「到底挪没挪」不靠这段注释，靠 G0-03 的应用连接内取证。
+  #   - sslMode=DISABLED 取代旧的 useSSL=false。
+  #   - allowPublicKeyRetrieval=true：MySQL 8.4 默认 caching_sha2_password，不走 SSL
+  #     时客户端要取服务端公钥，不给会被拒。
+  datasource:
+    url: "jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:13306}/${DB_NAME:auto_care}?sslMode=DISABLED&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8&allowPublicKeyRetrieval=true"
+    username: ${DB_USERNAME:autocare_app}
+    # 默认留空：仓库里不出现密码，跑起来必须靠环境变量注入
+    password: ${DB_PASSWORD:}
+    hikari:
+      # 与设计 §5.2 一致：资源写事务用 READ COMMITTED。连接池默认隔离级别也统一到这里，
+      # 不能只对某一个会话 SET 一下就当所有新连接都改了。
+      # 「真的生效了吗」要在应用连接里查 @@session.transaction_isolation，不采信这段文本。
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+      # 幂等并发等待上限（G1-01 加）。契约：同键并发等待最长 5 秒，超时 → 503 RETRYABLE_STORAGE_ERROR
+      # + Retry-After: 1。MySQL 默认 innodb_lock_wait_timeout 是 50 秒——一个 HTTP 请求挂 50 秒
+      # 不可接受，而且客户端早就超时重试了，那笔事务还在服务端占着锁。
+      #
+      # 为什么用 connection-init-sql 设会话变量，而不是靠语句级 query timeout：
+      # 语句超时只是**客户端放弃等待**，服务端那条 INSERT 还在锁上排着；会话变量是**服务端**的上限，
+      # 到点由 InnoDB 自己放手，客户端会收到明确的锁等待超时（驱动翻成 CannotAcquireLockException）。
+      # 代价：它是整池连接的默认值，所以这个值属于「演示应用上限」，不是业务规则。
+      connection-init-sql: SET SESSION innodb_lock_wait_timeout = 5
+
+  # ---- 迁移：Flyway（G0-03 引入）----
+  # 版本化迁移，空库可重复重建：第二次跑是 no-op，不需要自己写跳过逻辑。
+  # 设计 §6.2 原文就是「用版本化数据库迁移管理」。
+  flyway:
+    enabled: true
+    # 一份迁移链、两个目录，按版本号排序执行：结构（V1—V3）先，种子（V9xx）后。
+    # 拆开是为了让「种子」和「结构」在版本历史里能分别被看见。
+    locations: classpath:db/migration,classpath:db/seed
+    # 仓库里只留占位。真实哈希从环境变量来，不落仓库。
+    # 默认值是空串：**空串等于没有哈希**，所以驱动脚本会先断言这个变量非空再往下走。
+    placeholders:
+      seedPasswordHash: ${SEED_PASSWORD_HASH:}
+    # Flyway 9 起默认就是 true，这里显式写出来是为了让「绝不 clean」在配置里看得见
+    clean-disabled: true
+
+  # 迁移只走 Flyway 一条路。不写这句的话，哪天有人往 resources 里丢了 schema.sql，
+  # Boot 的 SQL init 会另外跑一遍，变成两个事实来源。
+  sql:
+    init:
+      mode: never
+
+  # G3 AI 配置见下方 autocare.ai.booking；凭据只从环境读取。
+
+  # ---- Redis / 鉴权 / 报价时限 ----
+  # 这些到 G0-04、G1、G4 才会真正用到；变量名见 03-环境与版本核对表.md
+  # （REDIS_HOST、REDIS_PORT、JWT_SECRET、QUOTE_TTL_MINUTES、ACCEPT_TTL_MINUTES）。
+  # 这里不预置值，避免出现「配置写了但没人读」的假象。
+
+# ---- G0-03 取证探针（默认关）----
+# 打开方式不是改这里，是启动时带参数：--autocare.probe.enabled=true
+# 它做四件只读的事，全走**应用自己的连接池连接**：
+#   1. 连接元信息（driver、连接串、数据库、当前用户）
+#   2. 会话/全局隔离级别、默认引擎、会话/全局时区、大小写敏感
+#   3. 真列 UTC 读回：读一行种子的 created_at，确认是 UTC 且带 3 位小数
+#   4. UTC 写读往返：对 DATETIME(3) 写 2026-10-21T12:34:56.789 再读回比对
+# 它不是业务代码，G1 之后如果没人需要可以整个删掉。
+# ---- JWT（G0-04 第 5 节）----
+# 密钥只从环境变量来：仓库里永远只有 ${JWT_SECRET:} 这个占位，真实值由运行环境注入。
+# HS256 要求至少 32 字节（256 位），给短了应用会在启动时就报错（JwtProperties 里做了校验）。
+# iss / aud 的取值是本片自行拍板、回报总控追认的：发出去的和校验的是同一对值。
+autocare:
+  vector:
+    host: ${AUTOCARE_VECTOR_REDIS_HOST:127.0.0.1}
+    port: ${AUTOCARE_VECTOR_REDIS_PORT:16379}
+  jwt:
+    secret: ${JWT_SECRET:}
+    issuer: auto-care
+    audience: auto-care-api
+    # 契约规定演示访问令牌有效期 1800 秒（30 分钟）
+    ttl-seconds: 1800
+  tasks:
+    enabled: ${AUTOCARE_TASKS_ENABLED:true}
+    workers: 2
+    queue-capacity: 4
+    lease: 60s
+    heartbeat: 10s
+    worker-name: ${AUTOCARE_WORKER_NAME:auto-care}
+  knowledge:
+    storage: ${AUTOCARE_KNOWLEDGE_STORAGE:./data/knowledge}
+    embedding-enabled: ${AUTOCARE_EMBEDDING_ENABLED:false}
+    embedding-base-url: ${EMBEDDING_BASE_URL:https://api.openai.com/v1}
+    embedding-model: ${EMBEDDING_MODEL:text-embedding-3-small}
+    dimensions: ${EMBEDDING_DIMENSIONS:1536}
+    analysis-enabled: ${AUTOCARE_QUOTE_AI_ENABLED:false}
+    chat-base-url: ${MODEL_BASE_URL:https://api.deepseek.com}
+    chat-model: ${MODEL_NAME:deepseek-chat}
+    timeout: 20s
+    max-pending: 100
+    max-actor-pending: 20
+    per-minute: 6
+  ai:
+    booking:
+      enabled: ${AUTOCARE_BOOKING_AI_ENABLED:false}
+      base-url: ${MODEL_BASE_URL:https://api.deepseek.com}
+      model: ${MODEL_NAME:deepseek-chat}
+      timeout: 20s
+      concurrency: 2
+      per-minute: 6
+  probe:
+    enabled: false
+
+logging:
+  level:
+    root: INFO
+    com.autocare: DEBUG
+    # ---- G1-02a 修的真缺陷：车牌原文经 SQL 参数日志外泄 ----
+    # MyBatis 在 DEBUG 下会把每条语句的「原样参数」逐条打出来：
+    #   c.a.server.vehicle.VehicleMapper.insert : ==> Parameters: 1(Long), G1_02A_TEST(String), A1234567(String), ...
+    # 其中第三个参数来自 t_vehicle.plate_mask_source —— 那一列存的就是**完整车牌原文**
+    # （脱敏值 plate_masked 由它生成）。契约 §4.2 明写「完整车牌原文不回显、不进日志」，
+    # 所以这里把 Mapper 接口的日志压到 INFO。
+    #
+    # 为什么按接口关，而不是把 com.autocare 整体降到 INFO：
+    # 其余 DEBUG 日志（service、安全链）是排障要用的，整体降级等于丢掉可观测性。
+    # MyBatis 用「Mapper 接口的全限定名」当 logger 名，所以只能逐个来——
+    # **以后任何承载敏感列的 Mapper，都要在这里补一行。**
+    com.autocare.server.vehicle.VehicleMapper: INFO
+    com.autocare.server.task: INFO
+    com.autocare.server.knowledge: INFO
+    com.autocare.server.ai: INFO
+    com.autocare.server.analysis: INFO
+    com.autocare.server.conversation: INFO
+    org.springframework.jdbc.core: INFO
+    org.springframework.ai: INFO
+    # 订单快照含服务地址和原始输入；不得由 SQL 参数/结果日志泄露。
+    com.autocare.server.order.booking.OrderMapper: INFO
+    com.autocare.server.order.lifecycle.OrderLifecycleMapper: INFO
+
+# ---- MyBatis（G0-04 第 4 节加）----
+# 库里是 snake_case（login_name），Java 字段是 camelCase（loginName）。
+# 开着这条，MyBatis 自动对上，Mapper 里就不用为每个字段手写 @Results 映射。
+# 注意它只管「列名 → 字段名」的机械转换，不做任何业务处理。
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true

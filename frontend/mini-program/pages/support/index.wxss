@@ -1,0 +1,2 @@
+.support-picker, .support-detail { box-sizing: border-box; width: 100%; padding: 16rpx; border: 1rpx solid #e8dedf; border-radius: 8rpx; background: #fff; }
+.support-detail { height: 184rpx; }

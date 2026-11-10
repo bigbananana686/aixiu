@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  auto-care-common：公共类型模块。
+
+  依赖方向：不依赖 auto-care-ai、不依赖 auto-care-server，也不依赖任何 Web / 持久化 / AI 框架。
+  它只放「谁都要用、且不引业务」的东西：错误码、身份值对象、统一返回结构（G0-04 起填内容）。
+  本项目里 common 是依赖图的叶子——所有模块可以依赖它，它不能依赖任何人，循环依赖在结构上就不可能。
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.autocare</groupId>
+        <artifactId>auto-care</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>auto-care-common</artifactId>
+    <name>auto-care-common</name>
+    <description>错误码、身份值对象、通用返回结构；不含业务逻辑</description>
+
+    <dependencies>
+        <!-- 本片刻意留空：空了才不会出现「common 依赖 Spring Web 于是谁都得带 Web」的连锁。
+             G0-04 做身份与错误协议时，如需校验注解再按需加 spring-boot-starter-validation。 -->
+    </dependencies>
+</project>
